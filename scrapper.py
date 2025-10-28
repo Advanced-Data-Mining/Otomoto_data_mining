@@ -98,6 +98,11 @@ def get_car_details(path):
     return car_data
 
 def get_cars_in_page2(path, page_num):
+    # Check if parquet file already exists
+    filename = f"data/page_{page_num:03d}.parquet"
+    if os.path.exists(filename):
+        return page_num, []
+
     res = requests.get(path + '?page=' + str(page_num), headers = {
         "Content-Type": "application/json",
         "User-Agent": "Safari/537.36"
