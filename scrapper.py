@@ -136,24 +136,21 @@ def write_page_to_parquet(page_num, page_cars):
 
 def scrap_model():
     path = 'https://www.otomoto.pl/dostawcze'
-    print(path)
-    # try:
-    #     res = requests.get(path, headers = {
-    #         "Content-Type": "application/json",
-    #         "User-Agent": "Safari/537.36"
-    #     })
-    #     res.raise_for_status()
-    #     car_soup = bs4.BeautifulSoup(res.text, "html.parser")
-    # except Exception as e:
-    #     raise Exception(e)
+    
+    try:
+        res = requests.get(path, headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Safari/537.36"
+        })
+        res.raise_for_status()
+    except Exception as e:
+        raise Exception(e)
 
-    # try:
-    #     number_of_pages = get_number_of_pages(path)
-    # except Exception as e:
-    #     print("Number of pages not found: ",e)
-    #     number_of_pages = 1
-        
-    number_of_pages = 1
+    try:
+        number_of_pages = get_number_of_pages(path)
+    except Exception as e:
+        print("Number of pages not found: ",e)
+        number_of_pages = 1
 
     threads = min(MAX_THREADS, number_of_pages)
     path_array = [path]*number_of_pages
