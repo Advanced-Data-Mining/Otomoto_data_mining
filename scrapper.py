@@ -1,5 +1,5 @@
 import requests, bs4
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 from tqdm import tqdm
 import sys
@@ -7,6 +7,7 @@ import re
 import pandas as pd
 import os
 import pyarrow
+import argparse
 
 
 MAX_THREADS = 50
@@ -125,9 +126,21 @@ def write_page_to_parquet(page_num, page_cars):
     print(f"Saved {len(page_cars)} cars to {filename}")
 
 
-def scrap_model():
-    path = 'https://www.otomoto.pl/dostawcze'
-    
+def parse_args():
+    parser = argparse.ArgumentParser(description='Scrape car data from otomoto.pl')
+    parser.add_argument('--number-of-pages', type=int, default=50,
+                       help='Number of pages to scrape (default: 50)')
+    parser.add_argument('--start-from-page', type=int, default=1,
+                       help='Starting page number (default: 1)')
+    parser.add_argument('--max-threads', type=int, default=MAX_THREADS,
+                       help=f'Maximum number of threads (default: {MAX_THREADS})')
+    parser.add_argument('--url', type=str, default='https://www.otomoto.pl/dostawcze',
+                       help='Base URL to scrape (default: otomoto.pl commercial vehicles)')
+    return parser.parse_args()
+
+def scrap_model(number_of_pages=50, start_from_page=1, max_threads=MAX_THREADS, url='https://www.otomoto.pl/dostawcze'):
+    path = url
+
     try:
         res = requests.get(path, headers = {
             "Content-Type": "application/json",
@@ -135,33 +148,46 @@ def scrap_model():
         })
         res.raise_for_status()
     except Exception as e:
-        raise Exception(e)
+        raise Exception(f"Failed to access {path}: {e}")
 
     try:
-        number_of_pages = get_number_of_pages(path)
+        pages_count = get_number_of_pages(path)
+        print(f"Total pages available: {pages_count}")
     except Exception as e:
         print("Number of pages not found: ",e)
-        number_of_pages = 1
+        pages_count = 1
 
-    number_of_pages = 1
-    threads = min(MAX_THREADS, number_of_pages)
-    path_array = [path]*number_of_pages
-    pages_range = range(1, number_of_pages + 1)
+    if start_from_page + number_of_pages - 1 > pages_count:
+        print(f"Warning: Requested range ({start_from_page}-{start_from_page + number_of_pages - 1}) exceeds available pages ({pages_count})")
+        number_of_pages = max(1, pages_count - start_from_page + 1)
+        print(f"Adjusted to scrape {number_of_pages} pages")
+
+    threads = min(max_threads, number_of_pages)
+
+    pages_range = range(start_from_page, start_from_page + number_of_pages)
 
     links.clear()
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        for page_num, page_cars in tqdm(
-                executor.map(get_cars_in_page2, path_array, pages_range),
-                total=len(path_array),  # or len(pages_range)
-                desc="🔍 Fetching car data",  # Custom description
-                colour='cyan',  # Progress bar color (in terminals that support it)
-                ncols=100,  # Width of the progress bar
-                smoothing=0.3,  # Smoothing for speed estimate
-                unit="req",  # Label per iteration
-                dynamic_ncols=True,  # Dynamically fit to terminal
+        # Submit all tasks
+        future_to_page = {
+            executor.submit(get_cars_in_page2, path, page_num): page_num
+            for page_num in pages_range
+        }
+
+        # Process results as they complete
+        for future in tqdm(
+                as_completed(future_to_page),
+                total=len(future_to_page),
+                desc="🔍 Fetching car data",
+                colour='cyan',
+                ncols=100,
+                smoothing=0.3,
+                unit="page",
+                dynamic_ncols=True,
                 file=sys.stdout
         ):
+            page_num, page_cars = future.result()
             write_page_to_parquet(page_num, page_cars)
 
     print(f"Total links collected: {len(links)}")
@@ -171,4 +197,28 @@ def scrap_model():
     time.sleep(0.25)
 
 
-scrap_model()
+if __name__ == "__main__":
+    args = parse_args()
+
+    if args.number_of_pages <= 0:
+        print("Error: Number of pages must be positive")
+        sys.exit(1)
+
+    if args.start_from_page <= 0:
+        print("Error: Start page must be positive")
+        sys.exit(1)
+
+    if args.max_threads <= 0:
+        print("Error: Max threads must be positive")
+        sys.exit(1)
+
+    print(f"Scraping {args.number_of_pages} pages starting from page {args.start_from_page}")
+    print(f"Using {args.max_threads} max threads")
+    print(f"URL: {args.url}")
+
+    scrap_model(
+        number_of_pages=args.number_of_pages,
+        start_from_page=args.start_from_page,
+        max_threads=args.max_threads,
+        url=args.url
+    )
