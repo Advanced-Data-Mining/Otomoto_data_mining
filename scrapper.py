@@ -38,7 +38,6 @@ def extract_car_properties(soup):
     data["condition"] = get_testid_text(soup, "new_used")
     data["accident_free"] = get_testid_text(soup, "no_accident")
     data["country_of_origin"] = get_testid_text(soup, "country_origin")
-    data["financing_possible"] = get_testid_text(soup, "financial_option")
 
     # Title
     h1 = soup.find("h1", class_=re.compile("offer-title"))
@@ -51,11 +50,6 @@ def extract_car_properties(soup):
     net_info = soup.find("p", class_=re.compile("5jshcp"))
     data["price_net_info"] = net_info.get_text(strip=True) if net_info else None
 
-    # Offer ID
-    offer_id = soup.find("p", string=re.compile("ID"))
-    if offer_id:
-        data["offer_id"] = offer_id.get_text(strip=True).replace("ID: ", "")
-
     # Location
     location = soup.find("a", href=re.compile("google.com/maps"))
     data["location"] = location.get_text(strip=True) if location else None
@@ -67,10 +61,6 @@ def extract_car_properties(soup):
         for p in equipment_section.find_all("p", class_=re.compile("iqjlxi")):
             equipment.append(p.get_text(strip=True))
     data["equipment"] = equipment
-
-    # Seller name
-    seller_name_el = soup.find("p", class_=re.compile("p377vw"))
-    data["seller_name"] = seller_name_el.get_text(strip=True) if seller_name_el else None
 
     # Posted date
     posted_date = soup.find("p", class_=re.compile("zv8mpc"))
@@ -103,6 +93,7 @@ def get_car_details(path):
     res.raise_for_status()
     car_soup = bs4.BeautifulSoup(res.text, "html.parser")
     car_data = extract_car_properties(car_soup)
+    car_data["url"] = path
     return car_data
 
 def get_cars_in_page2(path, page_num):
@@ -152,6 +143,7 @@ def scrap_model():
         print("Number of pages not found: ",e)
         number_of_pages = 1
 
+    number_of_pages = 1
     threads = min(MAX_THREADS, number_of_pages)
     path_array = [path]*number_of_pages
     pages_range = range(1, number_of_pages + 1)
