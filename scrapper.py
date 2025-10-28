@@ -4,6 +4,9 @@ import time
 from tqdm import tqdm
 import sys
 import re
+import pandas as pd
+import os
+import pyarrow
 
 
 MAX_THREADS = 50
@@ -102,22 +105,34 @@ def get_car_details(path):
     car_data = extract_car_properties(car_soup)
     return car_data
 
-def get_cars_in_page2(path, i):
-    res = requests.get(path + '?page=' + str(i), headers = {
+def get_cars_in_page2(path, page_num):
+    res = requests.get(path + '?page=' + str(page_num), headers = {
         "Content-Type": "application/json",
         "User-Agent": "Safari/537.36"
     })
     res.raise_for_status()
     currentPage = bs4.BeautifulSoup(res.text, "html.parser")
 
-    # print(currentPage.find_all("h2", {"class": "etydmma0 ooa-ezpr21"}))
+    page_cars = []
     for x in currentPage.find_all("h2", {"class": "etydmma0 ooa-ezpr21"}):
         x = x.find('a', href=True)
         links.append(x['href'])
         car_details = get_car_details(x['href'])
-        
-        print(car_details)
-    
+        page_cars.append(car_details)
+
+    return page_num, page_cars
+
+
+def write_page_to_parquet(page_num, page_cars):
+    if not page_cars:
+        return
+
+    os.makedirs("data", exist_ok=True)
+    df = pd.DataFrame(page_cars)
+    filename = f"data/page_{page_num:03d}.parquet"
+    df.to_parquet(filename, index=False)
+    print(f"Saved {len(page_cars)} cars to {filename}")
+
 
 def scrap_model():
     path = 'https://www.otomoto.pl/dostawcze'
@@ -147,7 +162,7 @@ def scrap_model():
     links.clear()
 
     with ThreadPoolExecutor(max_workers=threads) as executor:
-        for _ in tqdm(
+        for page_num, page_cars in tqdm(
                 executor.map(get_cars_in_page2, path_array, pages_range),
                 total=len(path_array),  # or len(pages_range)
                 desc="🔍 Fetching car data",  # Custom description
@@ -158,10 +173,10 @@ def scrap_model():
                 dynamic_ncols=True,  # Dynamically fit to terminal
                 file=sys.stdout
         ):
-            pass
+            write_page_to_parquet(page_num, page_cars)
 
-    print(links)
-    print(len(links))
+    print(f"Total links collected: {len(links)}")
+    print(f"Data saved to parquet files in 'data/' directory")
 
 
     time.sleep(0.25)
