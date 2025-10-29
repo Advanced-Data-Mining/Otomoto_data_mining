@@ -10,7 +10,7 @@ import pyarrow
 import argparse
 
 
-MAX_THREADS = 50
+MAX_THREADS = 1
 links = []
 
 
@@ -97,7 +97,7 @@ def get_car_details(path):
     car_data["url"] = path
     return car_data
 
-def get_cars_in_page2(path, page_num):
+def get_cars_in_page(path, page_num):
     # Check if parquet file already exists
     filename = f"data/page_{page_num:03d}.parquet"
     if os.path.exists(filename):
@@ -176,7 +176,7 @@ def scrap_model(number_of_pages=50, start_from_page=1, max_threads=MAX_THREADS, 
     with ThreadPoolExecutor(max_workers=threads) as executor:
         # Submit all tasks
         future_to_page = {
-            executor.submit(get_cars_in_page2, path, page_num): page_num
+            executor.submit(get_cars_in_page, path, page_num): page_num
             for page_num in pages_range
         }
 
