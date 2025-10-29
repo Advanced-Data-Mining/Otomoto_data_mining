@@ -10,7 +10,7 @@ import pyarrow
 import argparse
 
 
-MAX_THREADS = 50
+MAX_THREADS = 1
 links = []
 
 
@@ -126,6 +126,7 @@ def write_page_to_parquet(page_num, page_cars):
 
     os.makedirs("data", exist_ok=True)
     df = pd.DataFrame(page_cars)
+    print(df.head())
     filename = f"data/page_{page_num:03d}.parquet"
     df.to_parquet(filename, index=False)
     print(f"Saved {len(page_cars)} cars to {filename}")
