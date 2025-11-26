@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 import math
 import numpy as np
@@ -9,6 +10,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+
+
 
 # --- 0) load data ---
 df = pd.read_csv('../cleaned_data.csv', sep=';')
