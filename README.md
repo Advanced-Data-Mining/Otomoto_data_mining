@@ -24,8 +24,10 @@ Data is saved as Parquet files in the `data/` directory, with each page of resul
 - [x] Fine tuned [HerBERT](https://huggingface.co/docs/transformers/en/model_doc/herbert).
 - [ ] Decision Tree with TFIDF description vectors.
 - [ ] Ensemble: CatBoost for categorical features and XGBoost for numerical features.
-- [ ] Ensemble: CatBoost for categorical features, XGBoost for numerical features and BERT for contextual description processing.
-- [ ] [Herbert](https://huggingface.co/docs/transformers/en/model_doc/herbert)
+- [ ] Ensemble: CatBoost for categorical features, XGBoost for numerical features and HerBERT for contextual description processing.
+- [ ] Fixed [HerBERT](https://huggingface.co/docs/transformers/en/model_doc/herbert) with trained classifier layers.
+- [ ] Low Rank Adaptation on HerBERT instead of fine-tuning.
+- [ ] Use HerBERT as a vector embedding extraction layer + classifier (like XGB).
 
 ### Data exploration
 
