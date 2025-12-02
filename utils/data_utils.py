@@ -110,7 +110,8 @@ def plot_hist(df, bins: ndarray, title: str, xlabel: str, ylabel: str):
 
     ranges = pd.cut(prices, bins=bins)
     counts = ranges.value_counts().sort_index()
-
+    print("Min number of samples in bin: ", counts.min())
+    print("Max number of samples in bin: ", counts.max())
     plt.figure(figsize=(14, 6))
     counts.plot(kind="bar")
     plt.xticks(rotation=45, ha="right")
