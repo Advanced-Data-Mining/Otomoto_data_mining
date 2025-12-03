@@ -14,7 +14,7 @@ from sklearn.metrics import classification_report, accuracy_score, confusion_mat
 
 
 # --- 0) load data ---
-df = pd.read_csv('../cleaned_data.csv', sep=';')
+df = pd.read_csv('../data/processed/cleaned_data.csv', sep=';')
 
 # --- 1) ensure numeric price and clean text ---
 df['price_pln'] = pd.to_numeric(

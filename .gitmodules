@@ -1,4 +1,10 @@
 [submodule "data"]
-	path = data
+	path = data/raw
 	url = git@github.com:Advanced-Data-Mining/otomoto-data-mining-data.git
 	branch = main
+[submodule "otomoto-data-mining-data"]
+	path = otomoto-data-mining-data
+	url = git@github.com:Advanced-Data-Mining/otomoto-data-mining-data.git
+[submodule "data/raw"]
+	path = data/raw
+	url = git@github.com:Advanced-Data-Mining/otomoto-data-mining-data.git
