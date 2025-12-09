@@ -2,54 +2,98 @@ import math
 
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+from numpy import ndarray
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 
 
-def preprocessing(df, step: int = 50_000):
+
+def preprocessing(df, step: int = 20_000, min_price: int = 20_000, max_price: int = 300_000):
     """
     Function to preprocess the data
-    :param step: Step size for bins
     :param df: Dataframe
+    :param step: Step size for bins
+    :param min_price: Minimum price for bins
+    :param max_price: Maximum price for bins
     :return: df, bins
     """
-    # --- 1) ensure numeric price and clean text ---
-    df['price_pln'] = pd.to_numeric(
-        df['price_pln'].astype(str).str.replace(r'[^0-9\.-]', '', regex=True),
-        errors='coerce'
+    clean_df = df
+
+    df = clean_df.drop(
+        [
+            "url",
+            "color",
+            "posted_date",
+            "price_net_info",
+            "location",
+            "price",
+            "country_of_origin",
+        ],
+        axis=1,
+        errors="ignore",
     )
 
-    df['description'] = df['description'].astype(str).fillna('').str.strip()
+    df["capacity"] = (
+        df["capacity"]
+        .str.replace(" cm3", "", regex=False)
+        .str.replace(" ", "")
+        .astype(float)
+    )
 
-    # drop rows missing price or description
-    df = df[df['price_pln'].notna() & (df['description'] != '')].copy()
+    df["power"] = (
+        df["power"].str.replace(" ", "").str.replace("KM", "", regex=False).astype(float)
+    )
 
-    # --- 2) make 50_000-PLN bins (auto range) ---
-    min_price = int(math.floor(df['price_pln'].min() / step) * step)
-    max_price = int(math.ceil(df['price_pln'].max() / step) * step)
-    bins = np.arange(min_price, max_price + step, step)  # edges: [min, min+step, ..., max]
-    print(f"Bins from {min_price} to {max_price} step {step} -> {len(bins) - 1} classes")
+    df["mileage"] = (
+        df["mileage"].str.replace(" km", "", regex=False).str.replace(" ", "").astype(float)
+    )
 
-    # assign bin labels (0..n_bins-1)
-    df['price_bin'] = pd.cut(df['price_pln'], bins=bins, right=False, labels=False)
+    df["price_pln"] = (
+        df["price_pln"].str.replace(" ", "").str.replace(",", ".").astype(float)
+    )
 
-    # drop out-of-range just in case
-    df = df[df['price_bin'].notna()].copy()
-    df['price_bin'] = df['price_bin'].astype(int)
-    return df, bins
+    df = df.dropna(
+        subset=[
+            "model",
+            "condition",
+            "fuel",
+            "brand",
+            "body_type",
+            "accident_free",
+            "year",
+            "capacity",
+            "power",
+            "mileage",
+            "seats",
+            "description",
+        ]
+    )
+    lin_bins = np.arange(min_price, max_price + step, step)  # edges: [min, min+step, ..., max]
+    log_bins = np.logspace(
+        np.log10(min_price),
+        np.log10(max_price),
+        num=len(lin_bins),
+        dtype=float
+    )
+    log_bins = log_bins.astype(int)
+    return df, lin_bins, log_bins
 
 
-def custom_train_test_split(df, min_samples: int = 10):
+def custom_train_test_split(df, bins: ndarray, test_size: float = 0.2, random_state: int = 42):
     """
     Function to get train and test data
+    :param random_state:
+    :param test_size:
     :param df: Dataframe
-    :param min_samples: minimum number of samples needed for training
+    :param bins
     :return: X_train, X_test, y_train, y_test
     """
-    counts = df['price_bin'].value_counts()
-    valid_bins = counts[counts >= min_samples].index
-    df = df[df['price_bin'].isin(valid_bins)].copy()
-    print("Rows after filtering rare bins:", len(df))
-    print("Number of classes after filtering:", df['price_bin'].nunique())
+    df['price_bin'] = pd.cut(df['price_pln'], bins=bins, right=False, labels=False)
+
+    print("Number of classes:", df['price_bin'].nunique())
+    # delete data where price_bin is null
+    df.dropna(subset=['price_bin'], inplace=True)
 
     # If too few rows remain, consider reducing min_samples_per_class or increasing step.
 
@@ -57,5 +101,51 @@ def custom_train_test_split(df, min_samples: int = 10):
     X = df['description'].values
     y = df['price_bin'].values
     return train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+        X, y, test_size=test_size, random_state=random_state
     )
+
+
+def plot_hist(df, bins: ndarray, title: str, xlabel: str, ylabel: str):
+    prices = df["price_pln"].values
+
+    ranges = pd.cut(prices, bins=bins)
+    counts = ranges.value_counts().sort_index()
+    print("Min number of samples in bin: ", counts.min())
+    print("Max number of samples in bin: ", counts.max())
+    plt.figure(figsize=(14, 6))
+    counts.plot(kind="bar")
+    plt.xticks(rotation=45, ha="right")
+    plt.ylabel("Number of cars")
+    plt.xlabel("Price bracket")
+    plt.title("Logarithmic Bins – Distribution of Car Prices")
+    plt.tight_layout()
+    plt.show()
+
+def plot_cm(cm, title: str = "Confusion Matrix", xlabel: str = "Predicted Label", ylabel: str = "True Label"):
+    # --- PLOT ---
+    plt.figure(figsize=(8, 8))
+    plt.imshow(cm, interpolation='nearest')
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+
+    # ticks
+    plt.xticks(np.arange(cm.shape[1]))
+    plt.yticks(np.arange(cm.shape[0]))
+
+    plt.tight_layout()
+
+    # show plot
+    plt.show()
+
+def generate_cm(y_test,y_pred):
+    """
+    Function to generate confusion matrix
+    :param y_test:
+    :param y_pred:
+    :return: cm, cm_normalized
+    """
+    cm = confusion_matrix(y_test, y_pred)
+    cm_normalized = cm.astype(float) / cm.sum(axis=1, keepdims=True)
+
+    return cm, cm_normalized
