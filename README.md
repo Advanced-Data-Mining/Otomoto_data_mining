@@ -27,7 +27,7 @@ Data is saved as Parquet files in the `data/` directory, with each page of resul
 | HerBERT fine-tuned         | 40_000            | --%      |
 
 
-*Above steps is for the linear bins. Finally, in the models logarithmic split has been chosen but basing number of bins 
+*Above steps are for the linear bins. Finally, in the models logarithmic split has been chosen but basing number of bins 
 from linear one. 
 
 
