@@ -8,12 +8,23 @@ Data is saved as Parquet files in the `data/` directory, with each page of resul
 
 ## Results
 
-| Model      | Accuracy |
-|-----------|----------|
-| RF + RFECV | 68% |
-| RF + RFECV + TFIDF | 71% |
-| HerBERT fine-tuned | 60% |
-| DT + TFIDF | 66% |
+| Model                    | Linear bins step* | Accuracy |
+|--------------------------|-------------------|--------|
+| RF + RFECV               | 20_000            | --     |
+| RF + RFECV               | 30_000            | --     |
+| RF + RFECV               | 40_000            | --     |
+| RF + RFECV + TFIDF       | 20_000            | --     |
+| RF + RFECV + TFIDF       | 30_000            | --%    |
+| RF + RFECV + TFIDF       | 40_000            | --%    |
+| HerBERT fine-tuned       | 20_000            | --%    |
+| HerBERT fine-tuned       | 30_000            | --%    |
+| HerBERT fine-tuned       | 40_000            | --%    |
+| DecisionTree + TFIDF     | 20_000            | 48%      |
+| DecisionTree + TFIDF     | 30_000            | --%    |
+| DecisionTree + TFIDF     | 40_000            | --%    |
+*Above steps is for the linear bins. Finally, in the models logarithmic split has been chosen but basing number of bins 
+from linear one. 
+
 
 ## TODO
 
