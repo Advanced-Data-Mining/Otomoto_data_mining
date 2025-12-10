@@ -1,3 +1,7 @@
 .DS_Store
 .venv
-model-training
+uv.lock
+idea/
+vscode/
+.python-version
+**.ipynb_checkpoints
