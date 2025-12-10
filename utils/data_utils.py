@@ -8,8 +8,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
 
-
-def preprocessing(df, step: int = 20_000, min_price: int = 20_000, max_price: int = 300_000):
+def preprocessing(
+    df, step: int = 20_000, min_price: int = 20_000, max_price: int = 300_000
+):
     """
     Function to preprocess the data
     :param df: Dataframe
@@ -42,11 +43,17 @@ def preprocessing(df, step: int = 20_000, min_price: int = 20_000, max_price: in
     )
 
     df["power"] = (
-        df["power"].str.replace(" ", "").str.replace("KM", "", regex=False).astype(float)
+        df["power"]
+        .str.replace(" ", "")
+        .str.replace("KM", "", regex=False)
+        .astype(float)
     )
 
     df["mileage"] = (
-        df["mileage"].str.replace(" km", "", regex=False).str.replace(" ", "").astype(float)
+        df["mileage"]
+        .str.replace(" km", "", regex=False)
+        .str.replace(" ", "")
+        .astype(float)
     )
 
     df["price_pln"] = (
@@ -69,18 +76,23 @@ def preprocessing(df, step: int = 20_000, min_price: int = 20_000, max_price: in
             "description",
         ]
     )
-    lin_bins = np.arange(min_price, max_price + step, step)  # edges: [min, min+step, ..., max]
+    lin_bins = np.arange(
+        min_price, max_price + step, step
+    )  # edges: [min, min+step, ..., max]
     log_bins = np.logspace(
-        np.log10(min_price),
-        np.log10(max_price),
-        num=len(lin_bins),
-        dtype=float
+        np.log10(min_price), np.log10(max_price), num=len(lin_bins), dtype=float
     )
     log_bins = log_bins.astype(int)
     return df, lin_bins, log_bins
 
 
-def custom_train_test_split(df, bins: ndarray, test_size: float = 0.2, random_state: int = 42, description_only = True):
+def custom_train_test_split(
+    df,
+    bins: ndarray,
+    test_size: float = 0.2,
+    random_state: int = 42,
+    description_only=True,
+):
     """
     Function to get train and test data
     :param random_state:
@@ -89,24 +101,22 @@ def custom_train_test_split(df, bins: ndarray, test_size: float = 0.2, random_st
     :param bins
     :return: X_train, X_test, y_train, y_test
     """
-    df['price_bin'] = pd.cut(df['price_pln'], bins=bins, right=False, labels=False)
+    df["price_bin"] = pd.cut(df["price_pln"], bins=bins, right=False, labels=False)
 
-    print("Number of classes:", df['price_bin'].nunique())
+    print("Number of classes:", df["price_bin"].nunique())
     # delete data where price_bin is null
-    df.dropna(subset=['price_bin'], inplace=True)
+    df.dropna(subset=["price_bin"], inplace=True)
 
     # If too few rows remain, consider reducing min_samples_per_class or increasing step.
 
     # --- 4) train/test split (stratified) ---
     if description_only:
-        X = df['description'].values
+        X = df["description"].values
     else:
         X = df.drop(columns=["price_pln", "price_bin"])
-    
-    y = df['price_bin'].values
-    return train_test_split(
-        X, y, test_size=test_size, random_state=random_state
-    )
+
+    y = df["price_bin"].values
+    return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
 
 def plot_hist(df, bins: ndarray, title: str, xlabel: str, ylabel: str):
@@ -125,27 +135,38 @@ def plot_hist(df, bins: ndarray, title: str, xlabel: str, ylabel: str):
     plt.tight_layout()
     plt.show()
 
-def plot_cm(cm, title: str = "Confusion Matrix", xlabel: str = "Predicted Label", ylabel: str = "True Label"):
+
+def plot_cm(
+    cm,
+    title: str = "Confusion Matrix",
+    xlabel: str = "Predicted Label",
+    ylabel: str = "True Label",
+    xlabels=None,
+    ylabels=None,
+):
     # --- PLOT ---
     plt.figure(figsize=(8, 8))
-    im = plt.imshow(cm, interpolation='nearest')
+    im = plt.imshow(cm, interpolation="nearest")
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 
     # ticks
-    plt.xticks(np.arange(cm.shape[1]))
-    plt.yticks(np.arange(cm.shape[0]))
-    
+    plt.xticks(
+        np.arange(cm.shape[1]),
+        xlabels if xlabels is not None else np.arange(cm.shape[1]),
+    )
+    plt.yticks(
+        np.arange(cm.shape[0]),
+        ylabels if ylabels is not None else np.arange(cm.shape[0]),
+    )
+
     maxv = cm.max()
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
             v = cm[i, j]
             color = "black" if v > maxv * 0.40 else "white"
-            plt.text(j, i, f"{v}",
-                     ha="center", va="center",
-                     color=color,
-                     fontsize=9)
+            plt.text(j, i, f"{v}", ha="center", va="center", color=color, fontsize=9)
 
     plt.tight_layout()
     plt.colorbar(im, fraction=0.046, pad=0.04)
@@ -154,7 +175,8 @@ def plot_cm(cm, title: str = "Confusion Matrix", xlabel: str = "Predicted Label"
     # show plot
     plt.show()
 
-def generate_cm(y_test,y_pred):
+
+def generate_cm(y_test, y_pred):
     """
     Function to generate confusion matrix
     :param y_test:
