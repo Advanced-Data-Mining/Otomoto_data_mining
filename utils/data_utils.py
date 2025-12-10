@@ -80,7 +80,7 @@ def preprocessing(df, step: int = 20_000, min_price: int = 20_000, max_price: in
     return df, lin_bins, log_bins
 
 
-def custom_train_test_split(df, bins: ndarray, test_size: float = 0.2, random_state: int = 42):
+def custom_train_test_split(df, bins: ndarray, test_size: float = 0.2, random_state: int = 42, description_only = True):
     """
     Function to get train and test data
     :param random_state:
@@ -98,7 +98,11 @@ def custom_train_test_split(df, bins: ndarray, test_size: float = 0.2, random_st
     # If too few rows remain, consider reducing min_samples_per_class or increasing step.
 
     # --- 4) train/test split (stratified) ---
-    X = df['description'].values
+    if description_only:
+        X = df['description'].values
+    else:
+        X = df.drop(columns=["price_pln", "price_bin"])
+    
     y = df['price_bin'].values
     return train_test_split(
         X, y, test_size=test_size, random_state=random_state
@@ -124,7 +128,7 @@ def plot_hist(df, bins: ndarray, title: str, xlabel: str, ylabel: str):
 def plot_cm(cm, title: str = "Confusion Matrix", xlabel: str = "Predicted Label", ylabel: str = "True Label"):
     # --- PLOT ---
     plt.figure(figsize=(8, 8))
-    plt.imshow(cm, interpolation='nearest')
+    im = plt.imshow(cm, interpolation='nearest')
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -132,8 +136,20 @@ def plot_cm(cm, title: str = "Confusion Matrix", xlabel: str = "Predicted Label"
     # ticks
     plt.xticks(np.arange(cm.shape[1]))
     plt.yticks(np.arange(cm.shape[0]))
+    
+    maxv = cm.max()
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            v = cm[i, j]
+            color = "black" if v > maxv * 0.40 else "white"
+            plt.text(j, i, f"{v}",
+                     ha="center", va="center",
+                     color=color,
+                     fontsize=9)
 
     plt.tight_layout()
+    plt.colorbar(im, fraction=0.046, pad=0.04)
+    plt.grid(False)
 
     # show plot
     plt.show()
@@ -148,4 +164,4 @@ def generate_cm(y_test,y_pred):
     cm = confusion_matrix(y_test, y_pred)
     cm_normalized = cm.astype(float) / cm.sum(axis=1, keepdims=True)
 
-    return cm, cm_normalized
+    return cm, cm_normalized.round(decimals=2)
