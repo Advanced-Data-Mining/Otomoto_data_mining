@@ -129,9 +129,9 @@ def plot_hist(df, bins: ndarray, title: str, xlabel: str, ylabel: str):
     plt.figure(figsize=(14, 6))
     counts.plot(kind="bar")
     plt.xticks(rotation=45, ha="right")
-    plt.ylabel("Number of cars")
-    plt.xlabel("Price bracket")
-    plt.title("Logarithmic Bins – Distribution of Car Prices")
+    plt.ylabel(ylabel)
+    plt.xlabel(xlabel)
+    plt.title(title)
     plt.tight_layout()
     plt.show()
 
