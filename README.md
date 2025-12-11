@@ -22,9 +22,10 @@ Data is saved as Parquet files in the `data/` directory, with each page of resul
 | RF + RFECV + TFIDF         | 20_000            | --       |
 | RF + RFECV + TFIDF         | 30_000            | --%      |
 | RF + RFECV + TFIDF         | 40_000            | --%      |
-| HerBERT fine-tuned         | 20_000            | --%      |
-| HerBERT fine-tuned         | 30_000            | --%      |
-| HerBERT fine-tuned         | 40_000            | --%      |
+| HerBERT fine-tuned         | 20_000            | 56%      |
+| HerBERT fine-tuned         | 30_000            | --       |
+| HerBERT fine-tuned         | 40_000            | --       |
+| HerBert (Near-miss=1)       | 20_000             | 85%       |
 
 
 *Above steps are for the linear bins. Finally, in the models logarithmic split has been chosen but basing number of bins 
